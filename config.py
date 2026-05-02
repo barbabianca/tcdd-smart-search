@@ -33,9 +33,11 @@ def get_tcdd_token() -> str:
     """Read TCDD_TOKEN from st.secrets (Streamlit Cloud) or os.environ (.env / local)."""
     try:
         import streamlit as st
-        if hasattr(st, "secrets") and "TCDD_TOKEN" in st.secrets:
-            return st.secrets["TCDD_TOKEN"]
-    except ImportError:
+        token = st.secrets["TCDD_TOKEN"]
+        if token:
+            return token
+    except Exception:
+        # No streamlit, no secrets.toml, key absent, or any other failure — fall through.
         pass
 
     token = os.environ.get("TCDD_TOKEN")
