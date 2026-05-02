@@ -123,30 +123,47 @@ st.caption(
 # ---------- two-column layout ------------------------------------------------
 
 
+if "reset_counter" not in st.session_state:
+    st.session_state.reset_counter = 0
+if "search_submitted" not in st.session_state:
+    st.session_state.search_submitted = False
+
 col_form, col_results = st.columns([1, 2.5])
 
 
 with col_form:
+    rc = st.session_state.reset_counter
     with st.form("search_form", clear_on_submit=False):
         origin_name = st.selectbox(
             "Nereden",
             options=station_names,
             index=_default_index("ESKİŞEHİR", 0),
+            key=f"origin_{rc}",
         )
         dest_name = st.selectbox(
             "Nereye",
             options=station_names,
             index=_default_index("İSTANBUL(SÖĞÜTLÜÇEŞME)", min(1, len(station_names) - 1)),
+            key=f"dest_{rc}",
         )
         the_date = st.date_input(
             "Tarih",
             value=date.today() + timedelta(days=1),
             min_value=date.today(),
             format="DD-MM-YYYY",
+            key=f"search_date_{rc}",
         )
         submitted = st.form_submit_button(
             "Bilet Ara", use_container_width=True, type="primary"
         )
+
+    if submitted:
+        st.session_state.search_submitted = True
+
+    if st.button("Temizle", use_container_width=True):
+        st.session_state.reset_counter += 1
+        st.session_state.search_submitted = False
+        st.rerun()
 
 
 # ---------- rendering --------------------------------------------------------
@@ -298,7 +315,7 @@ def _run_search() -> None:
 
 
 with col_results:
-    if submitted:
+    if submitted or st.session_state.search_submitted:
         _run_search()
     else:
-        st.info("Soldan istasyon ve tarih seçerek bilet aramaya başlayın.")
+        st.info("İstasyon ve tarih girip 'Bilet Ara' butonuna basın")
