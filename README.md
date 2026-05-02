@@ -1,16 +1,57 @@
-# tcdd_smart_search
+# ⛓️ Zincir Bilet
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen.svg)
 
-Online TCDD ticket search with split-segment fallback. No DB.
+Direkt sefer dolu mu? Aynı trende koltuk değiştirerek tamamlayabileceğiniz zincir biletleri bulur.
+
+## Why Zincir Bilet?
+
+TCDD'de bir A→C seferi tümüyle dolu görünse de, aynı trende A→B ve B→C için ayrı koltuklar mevcut olabilir. İki bilet, tek zincir — aynı trenden inmeden varışa ulaşırsınız.
+
+Zincir Bilet bu boşlukları otomatik tarar: her halkayı (segment bileti) bulur, zinciri (tam yolculuğu) bir arada sunar. Çok trenliyse de çalışır, ama önce aynı-tren zincirlere bakar.
+
+## Features
+
+- **Direkt önce**: Dolu değilse zincire gerek yok, direkt bilet döner.
+- **Halka halka arama**: İç durakları split noktası olarak dener; derinlik 2–4 arası.
+- **Aynı-tren zinciri tercihli**: Aktarma yoksa alarm yok; zorunluysa çoklu-tren zinciri de bulur.
+- **Transfer uyarıları**: Sıkışık aktarma (<2 dk), olağandışı bekleme (>5 dk) veya farklı tren işaretlenir.
+- **CLI + Web**: Terminal kullanımı ve Streamlit web arayüzü.
+- **DB yok**: Tüm aramalar canlı TCDD API üzerinden; önbellek sadece oturum içi.
+
+## How It Works
+
+```
+A ──── [halka 1] ──── B ──── [halka 2] ──── C
+└────────────── zincir ─────────────────────┘
+```
+
+1. A→C için direkt arama yap. Koltuk varsa → en ucuzunu döndür.
+2. Yoksa: o güzergahı fiziksel olarak geçen trenlerin sıralı durak listesini al.
+3. İç duraklardan split noktaları seç; her halka (A→B, B→C) için alt-arama yap.
+4. Aynı-tren zinciri öncelikli; yoksa farklı-tren zincirine düş, işaretle.
+5. İlk uygun derinlikte dur. Toplam fiyata göre sırala, tiebreak: daha az halka.
+
+Her bilet bir **halka**, tam yolculuk bir **zincir**.
 
 ## Status
 
 - Phase 1 (API discovery): done
 - Phase 2 (split-segment engine): done
 - Phase 3 (Telegram bot): not started
+
+## Web Arayüzü (Streamlit)
+
+```bash
+source venv/bin/activate
+streamlit run app.py
+```
+
+Tarayıcıda `http://localhost:8501` açılır. Kalkış / varış / tarih girin, "Ara" deyin — CLI'yle aynı motoru kullanır.
+
+> Screenshot: yakında eklenecek.
 
 ## Setup
 
@@ -103,6 +144,7 @@ TCDD calls.
 
 | File | Purpose |
 | --- | --- |
+| `app.py` | Streamlit web arayüzü |
 | `config.py` | endpoints, headers, `get_tcdd_token()` env reader |
 | `tcdd_client.py` | `TCDDClient.search(SearchRoute)` → raw JSON |
 | `stations.py` | name↔id lookup from public CDN (cached) |
