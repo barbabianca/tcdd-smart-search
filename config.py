@@ -30,14 +30,21 @@ DEFAULT_HEADERS = {
 
 
 def get_tcdd_token() -> str:
-    """Read TCDD_TOKEN from environment. Raise if missing."""
+    """Read TCDD_TOKEN from st.secrets (Streamlit Cloud) or os.environ (.env / local)."""
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "TCDD_TOKEN" in st.secrets:
+            return st.secrets["TCDD_TOKEN"]
+    except ImportError:
+        pass
+
     token = os.environ.get("TCDD_TOKEN")
-    if not token:
-        raise RuntimeError(
-            "TCDD_TOKEN environment variable is not set. "
-            "See TOKEN_GUIDE.md for instructions on how to obtain a token."
-        )
-    return token
+    if token:
+        return token
+
+    raise RuntimeError(
+        "TCDD_TOKEN not set. See TOKEN_GUIDE.md."
+    )
 
 
 # blTrainTypes — what the browser sends by default. Empty array caused 403,
