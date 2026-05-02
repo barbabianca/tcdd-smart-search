@@ -6,6 +6,8 @@
 
 Direkt sefer dolu mu? Aynı trende koltuk değiştirerek tamamlayabileceğiniz zincir biletleri bulur.
 
+🌐 **Canlı Demo:** [demiryollari-zincir-bilet.streamlit.app](https://demiryollari-zincir-bilet.streamlit.app/)
+
 ## Why Zincir Bilet?
 
 TCDD'de bir A→C seferi tümüyle dolu görünse de, aynı trende A→B ve B→C için ayrı koltuklar mevcut olabilir. İki bilet, tek zincir — aynı trenden inmeden varışa ulaşırsınız.
