@@ -14,8 +14,14 @@ import itertools
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 from tcdd_client import SearchRoute, TCDDClient
+
+# TCDD API timestamps are in Turkey local time (UTC+3 / UTC+4 DST).
+# Always parse and display in this zone so results are correct regardless
+# of where the server runs (Streamlit Cloud is UTC).
+TR_TZ = ZoneInfo("Europe/Istanbul")
 
 MAX_DEPTH = 4
 SAME_TRAIN_GAP_MAX = timedelta(minutes=10)
@@ -232,14 +238,17 @@ class TrainExploration:
 def _ts_ms_to_dt(ms: int | None) -> datetime | None:
     if ms is None:
         return None
-    return datetime.fromtimestamp(ms / 1000.0)
+    return datetime.fromtimestamp(ms / 1000.0, tz=TR_TZ)
 
 
 def _parse_iso(s: str | None) -> datetime | None:
     if not s:
         return None
     try:
-        return datetime.fromisoformat(s)
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=TR_TZ)
+        return dt.astimezone(TR_TZ)
     except ValueError:
         return None
 
@@ -623,7 +632,7 @@ def _sort_journeys(
         first_dep = j.legs[0].departure_time
         before_hint = 0
         if time_hint is not None:
-            hint_dt = datetime.combine(first_dep.date(), time_hint)
+            hint_dt = datetime.combine(first_dep.date(), time_hint).replace(tzinfo=first_dep.tzinfo)
             before_hint = 1 if first_dep < hint_dt else 0
         return (before_hint, j.total_price, len(j.legs))
 
