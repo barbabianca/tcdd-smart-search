@@ -1,5 +1,9 @@
 # tcdd_smart_search
 
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen.svg)
+
 Online TCDD ticket search with split-segment fallback. No DB.
 
 ## Status
