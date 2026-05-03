@@ -175,6 +175,10 @@ TCDD calls.
 - Sub-searches are cached per (origin, dest, date) within one engine
   instance.
 
+## Bilinen Sınırlamalar
+
+- Şu an sadece 1 kişilik bilet aranıyor. Birden fazla kişi için her birini ayrı ayrı kontrol etmeniz gerekebilir.
+
 ## Disclaimer
 
 Bu proje TCDD ile resmi bir bağlantı içermez. Eğitim ve kişisel kullanım

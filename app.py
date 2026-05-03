@@ -67,13 +67,10 @@ def _hhmm(dt: datetime | None) -> str:
 
 
 def _cabins_summary(leg: Leg) -> str:
-    if not leg.cabins:
+    regular = [c for c in leg.cabins if not c.is_accessibility]
+    if not regular:
         return "Yer bilgisi yok"
-    parts: list[str] = []
-    for c in leg.cabins:
-        suffix = " (engelli)" if c.is_accessibility else ""
-        parts.append(f"{c.name}: {c.seats}{suffix}")
-    return " · ".join(parts)
+    return " · ".join(f"{c.name}: {c.seats}" for c in regular)
 
 
 def _tcdd_link_button() -> None:
@@ -146,11 +143,11 @@ with col_form:
             index=_default_index("İSTANBUL(SÖĞÜTLÜÇEŞME)", min(1, len(station_names) - 1)),
             key=f"dest_{rc}",
         )
-        the_date = st.date_input(
+        date_str = st.text_input(
             "Tarih",
-            value=date.today() + timedelta(days=1),
-            min_value=date.today(),
-            format="DD-MM-YYYY",
+            value=(date.today() + timedelta(days=1)).strftime("%d-%m-%Y"),
+            placeholder="DD-MM-YYYY (örn: 05-05-2026)",
+            help="Tarih formatı: gün-ay-yıl (DD-MM-YYYY)",
             key=f"search_date_{rc}",
         )
         submitted = st.form_submit_button(
@@ -252,6 +249,11 @@ def _run_search() -> None:
         st.error("Kalkış ve varış aynı istasyon olamaz.")
         return
 
+    try:
+        the_date = datetime.strptime(date_str.strip(), "%d-%m-%Y").date()
+    except ValueError:
+        st.error("Tarih DD-MM-YYYY formatında olmalı (örnek: 05-05-2026)")
+        return
     api_departure = f"{the_date.strftime('%d-%m-%Y')} 00:00:00"
     label = f"{origin['name']} → {dest['name']}  {the_date.strftime('%d-%m-%Y')}"
 

@@ -36,16 +36,13 @@ def _fmt_price(amount: float, currency: str) -> str:
 
 
 def _fmt_cabins(leg: Leg) -> str:
-    if not leg.cabins:
-        return "yer yok"
     # Don't call .title() — it breaks Turkish (EKONOMİ -> 'Ekonomi̇').
-    parts: list[str] = []
-    for c in leg.cabins:
-        if c.is_accessibility:
-            parts.append(f"{c.name}: {c.seats} (Sadece engelli koltuğu)")
-        else:
-            parts.append(f"{c.name}: {c.seats}")
-    return ", ".join(parts)
+    # Accessibility-only cabins are excluded: they aren't bookable by general
+    # passengers and showing the count misleads users into thinking seats exist.
+    regular = [c for c in leg.cabins if not c.is_accessibility]
+    if not regular:
+        return "yer yok"
+    return ", ".join(f"{c.name}: {c.seats}" for c in regular)
 
 
 def render_leg(leg: Leg, *, index: int | None = None) -> str:
