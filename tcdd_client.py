@@ -50,6 +50,7 @@ class TCDDClient:
             list(train_types) if train_types is not None else list(DEFAULT_TRAIN_TYPES)
         )
         self.session = session or requests.Session()
+        self.last_status_code: int | None = None
 
     def _headers(self) -> dict[str, str]:
         # Browser sends bare token; "Bearer " prefix also works. Send bare
@@ -78,6 +79,7 @@ class TCDDClient:
             json=body,
             timeout=REQUEST_TIMEOUT,
         )
+        self.last_status_code = resp.status_code
         if resp.status_code in (401, 403):
             raise TCDDAuthError(
                 f"TCDD rejected the token ({resp.status_code}). "

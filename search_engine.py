@@ -16,7 +16,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
 
-from tcdd_client import SearchRoute, TCDDClient
+from tcdd_client import SearchRoute, TCDDAuthError, TCDDClient
 
 # TCDD API timestamps are in Turkey local time (UTC+3 / UTC+4 DST).
 # Always parse and display in this zone so results are correct regardless
@@ -371,6 +371,9 @@ class SearchEngine:
         # Set after each find_journeys() call. cli.py uses this to differentiate
         # "no trains exist for this date" from "trains exist but no viable seats".
         self.last_direct_train_count: int = 0
+        # Stores the last non-auth exception swallowed by _query() — used by
+        # the debug panel in app.py to surface silent network/parse failures.
+        self.last_error: Exception | None = None
 
     def _query(
         self,
@@ -392,7 +395,10 @@ class SearchEngine:
         )
         try:
             resp = self.client.search(route)
-        except Exception:
+        except TCDDAuthError:
+            raise  # propagate so app.py can show the proper auth-error message
+        except Exception as exc:
+            self.last_error = exc
             self._cache[key] = []
             return []
         parsed = _parse_response(resp, origin_id, dest_id)

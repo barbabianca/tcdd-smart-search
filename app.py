@@ -6,6 +6,7 @@ those modules — this is purely a frontend.
 Run:
     streamlit run app.py
 """
+# debug deployment 2026-05-13 — force redeploy
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
@@ -78,6 +79,12 @@ def _tcdd_link_button() -> None:
         "🔗 TCDD'de aç", TCDD_HOMEPAGE,
         type="secondary", use_container_width=True,
     )
+
+
+def _show_debug(dbg: dict) -> None:
+    with st.expander("🔧 Debug", expanded=False):
+        for k, v in dbg.items():
+            st.write(f"**{k}:** `{v}`")
 
 
 # ---------- token guard -------------------------------------------------------
@@ -257,6 +264,16 @@ def _run_search() -> None:
     api_departure = f"{the_date.strftime('%d-%m-%Y')} 00:00:00"
     label = f"{origin['name']} → {dest['name']}  {the_date.strftime('%d-%m-%Y')}"
 
+    # Collect token info for the debug panel (never prints the token itself).
+    _dbg: dict = {}
+    try:
+        _tok = get_tcdd_token()
+        _dbg["token_durumu"] = (
+            f"OK — {len(_tok)} karakter, eyJ ile başlıyor: {_tok.startswith('eyJ')}"
+        )
+    except RuntimeError as e:
+        _dbg["token_durumu"] = f"HATA — {e}"
+
     with st.spinner(f"Zincir biletler aranıyor: {label} ..."):
         engine = SearchEngine()
         try:
@@ -269,14 +286,26 @@ def _run_search() -> None:
                 origin_name=origin["name"], dest_name=dest["name"],
             )
         except TCDDAuthError as exc:
+            _dbg["http_durum_kodu"] = getattr(engine.client, "last_status_code", "N/A")
+            _dbg["ham_sefer_sayısı"] = engine.last_direct_train_count
+            _dbg["son_hata"] = f"TCDDAuthError: {exc}"
             st.error(
                 f"**TCDD token reddedildi:** {exc}\n\n"
                 "Yeni bir token alın → [TOKEN_GUIDE.md](TOKEN_GUIDE.md)."
             )
+            _show_debug(_dbg)
             return
         except Exception as exc:
+            _dbg["http_durum_kodu"] = getattr(engine.client, "last_status_code", "N/A")
+            _dbg["ham_sefer_sayısı"] = engine.last_direct_train_count
+            _dbg["son_hata"] = f"{type(exc).__name__}: {exc}"
             st.error(f"Arama sırasında hata oluştu: {exc}")
+            _show_debug(_dbg)
             return
+
+    _dbg["http_durum_kodu"] = getattr(engine.client, "last_status_code", "N/A")
+    _dbg["ham_sefer_sayısı"] = engine.last_direct_train_count
+    _dbg["son_hata"] = str(engine.last_error) if engine.last_error else "—"
 
     directs = sorted(
         (j for j in journeys if len(j.legs) == 1),
@@ -299,6 +328,7 @@ def _run_search() -> None:
             st.warning("Bu tarih için sefer bulunamadı.")
         else:
             st.warning("Bu tarih için ne direkt bilet ne de zincir bilet bulundu.")
+        _show_debug(_dbg)
         return
 
     if directs:
@@ -314,6 +344,8 @@ def _run_search() -> None:
         )
         for exp in same_train_splits:
             _render_same_train_split(exp)
+
+    _show_debug(_dbg)
 
 
 with col_results:
